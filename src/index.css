@@ -1,0 +1,142 @@
+:root {
+  /* TODO: Add popins font */
+  font-family: Poppins, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: black;
+  background-color: rgb(166 250 255);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+  --main-accent: rgb(255 166 246);
+}
+
+main {
+  width: 100%;
+  padding: 2rem;
+}
+
+form label {
+  font-weight: 600;
+  margin: 5px 0;
+}
+
+h1, h2 {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+li {
+  padding: 0;
+  margin: 0;
+}
+
+.form_style{
+  font-size: 1rem;
+  outline: none;
+  border: 2px solid #000;
+  box-shadow: 3px 4px 0px 1px #000;
+  width: 100%;
+  background-color: white;
+  color: black;
+  padding: 12px 10px;
+  border-radius: 4px;
+}
+
+::placeholder {
+  color: #64758F;
+}
+
+.form_style:focus {
+  background-color: rgb(255 166 246);
+}
+
+.btn:focus{
+  transform: translateY(4px);
+  box-shadow: 1px 2px 0px 0px #000;
+}
+
+
+.btn{
+  cursor: pointer;
+  font-size: 1rem;
+  outline: none;
+  border: 2px solid #000;
+  box-shadow: 3px 4px 0px 1px #000;
+  background-color: white;
+  color: black;
+  border-radius: 4px;
+}
+
+.btn-label {
+  padding: 0.75rem 2rem;
+  text-wrap: nowrap;
+}
+
+.btn-icon {
+  padding: 0.75rem 1.25rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.games-list {
+  outline: none;
+  border: 2px solid #000;
+  box-shadow: 3px 4px 0px 1px #000;
+  width: 100%;
+  color: black;
+  border-radius: 4px;
+}
+
+.games-list li {
+  background-color: white;
+  width: 100%;
+  padding: 12px 0px;
+  border-bottom: 2px solid black;
+}
+
+.games-list li:hover {
+  background-color: var(--main-accent);
+}
+
+.games-list li:last-child {
+  border: none;
+}
