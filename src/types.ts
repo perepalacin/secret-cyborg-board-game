@@ -4,8 +4,16 @@ export interface GameRoomProps {
     votingTimer: number;
     requiredPlayers: number;
     discussionTimer: number;
-    players: string[];
+    players: PlayerProps[];
     creator: string;
+    started: boolean;
+}
+
+export interface PlayerProps {
+    userid: string,
+    username: string,
+    action: string,
+    faction: string,
 }
 
 export interface userData {

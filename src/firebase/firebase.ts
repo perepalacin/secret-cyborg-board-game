@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { addDoc, collection, doc, getDocs, getFirestore, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getFirestore, updateDoc } from "firebase/firestore";
 import { browserSessionPersistence, getAuth, onAuthStateChanged, setPersistence, signInAnonymously } from 'firebase/auth';
-import { GameRoomProps } from '../types';
+import { GameRoomProps, PlayerProps } from '../types';
 
 
 const firebaseConfig = {
@@ -10,13 +10,15 @@ const firebaseConfig = {
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    databaseURL: import.meta.env.VITE_DATABASE_URL,
+
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app = initializeApp(firebaseConfig); //firebase app => auth
+export const db = getFirestore(app); //Firestore
 
-const auth = getAuth(app);
+export const auth = getAuth(app);
 
 setPersistence(auth, browserSessionPersistence)
   .then(() => {
@@ -39,66 +41,69 @@ var userId = "";
 onAuthStateChanged(auth, (user) => {
     if (user) {
       userId = user.uid;
-      console.log(userId);
     } else {
         console.log("not logged in");
     }
   });
 
-  export const createGameRoom = async (data: GameRoomProps) => {
+  export const createGameRoom = async (data: GameRoomProps, userName: string) => {
     try {
         if (!userId) {
             throw new Error ("Unauthorized");   
         }
-        await addDoc(collection(db, "gamerooms"), {
+        const docRef = await addDoc(collection(db, "gamerooms"), {
             name: data.name,
             votingTimer: data.votingTimer,
             requiredPlayers: data.requiredPlayers,
             discussionTimer: data.discussionTimer,
-            players: [userId],
-            creator: userId
-            });
+            players: [{
+                userid: userId,
+                username: userName,
+                action: "none",
+                faction: "none",
+            }],
+            creator: userId,
+            started: false,
+        })
+        return docRef.id;
       } catch (e) {
-        console.error("Error adding document: ", e);
-        alert("Couldn't create your room, try again later");
+          alert("Couldn't create your room, try again later");
+          return "none";
       }
 }
 
-export const getGameRoomsData = async () => {
-    const querySnapshot = await getDocs(collection(db, "gamerooms"));
-    const dataArray = querySnapshot.docs.map(doc => (
-        {
-            id: doc.id,
-            name: doc.data().name,
-            votingTimer: doc.data().votingTimer,
-            requiredPlayers: doc.data().requiredPlayers,
-            discussionTimer: doc.data().discussionTimer,
-            players: doc.data().players,
-            creator: doc.data().creator
-        }
-    ));
-    return dataArray;
-}
-
-export const joinGameRoom = async (roomId: string, players: string[]) => {
+export const joinGameRoom = async (roomId: string, players: PlayerProps[], userName: string, requiredPlayers: number) => {
     try {
         if (!userId) {
             throw new Error("Unauthorized User");
         }
-        console.log(players);
-        console.log(userId);
-        if (!players.includes(userId)) {
-            const updatedPlayers = players;
-            updatedPlayers.push(userId);
-            console.log(updatedPlayers);
-            const gamerooms = doc(db, "gamerooms", roomId);
+        players.forEach((item: PlayerProps) => {
+            if (item.userid === userId) {
+                throw new Error("User already in the game");
+            }
+        })
+        const updatedPlayers = players;
+        updatedPlayers.push({
+            userid: userId,
+            username: userName,
+            action: "none",
+            faction: "none", 
+        });
+        const gamerooms = doc(db, "gamerooms", roomId);
+        console.log(updatedPlayers.length);
+        if (updatedPlayers.length > requiredPlayers) {
+            throw new Error("Room capacity already exceeded");
+        } else if (updatedPlayers.length === requiredPlayers) {
+            console.log("here");
             await updateDoc(gamerooms, {
-                players: updatedPlayers
+                started: true,
             });
-        } else {
-            throw new Error ("User already in the game");
         }
+        await updateDoc(gamerooms, {
+            players: updatedPlayers,
+        });
+        return true;
     } catch (error) {
-        console.log(error);
+        return false;
     }
 }

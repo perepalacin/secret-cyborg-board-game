@@ -1,30 +1,43 @@
 import { useEffect, useState } from "react";
 import CreateNewRoom from "../components/CreateNewRoom";
 import RoomsList from "../components/RoomsList";
-import { getGameRoomsData } from "../firebase/firebase";
+import { db } from "../firebase/firebase";
 import { GameRoomProps } from "../types";
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 
 const FindARoom = () => {
+
 
   const [rooms, setRooms] = useState<GameRoomProps[]>([]);
   const [filteredRooms, setFilteredRooms] = useState<GameRoomProps[]>([])
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    getGameRoomsData().then(
-      data => {
-        setRooms(data);
-        setFilteredRooms(data);
-      }
-    ).catch(_e => {
-      console.log("We couldn't find any rooms");
+    const q = query(collection(db, "gamerooms"),
+      orderBy("__name__", "asc"), where("started", "==", false));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedRooms: GameRoomProps[] = [];
+      snapshot.forEach((doc) => {
+        fetchedRooms.push({
+          id: doc.id,
+          name: doc.data().name,
+          votingTimer: doc.data().votingTimer,
+          requiredPlayers: doc.data().requiredPlayers,
+          discussionTimer: doc.data().discussionTimer,
+          players: doc.data().players,
+          creator: doc.data().creator,
+          started: doc.data().started,
+        });
+      });
+      setRooms(fetchedRooms);
     });
+    return () => {unsubscribe()};
   }, []);
 
   useEffect(() => {
-    const filteredData = rooms.filter(item => item.name.includes(searchQuery));
+    const filteredData = rooms.filter(item => item.name.includes(searchQuery.toLowerCase() || searchQuery.toUpperCase()));
     setFilteredRooms(filteredData);
-  }, [searchQuery]);
+  }, [searchQuery, rooms]);
 
   // rooms = getRooms();
 

@@ -1,7 +1,8 @@
 import { FormEvent, useState } from "react";
 import useComponentVisible from "../hooks/useComponentVisible";
 import { XIcon } from "lucide-react";
-import { createGameRoom } from "../firebase/firebase";
+import { createGameRoom, joinGameRoom } from "../firebase/firebase";
+import { useNavigate } from "react-router-dom";
 
 const CreateNewRoom = () => {
     
@@ -9,6 +10,8 @@ const CreateNewRoom = () => {
     const [dialogVisible, setDialogVisible] = useState(false);
     const { ref, isComponentVisible, setIsComponentVisible } =
     useComponentVisible(false);
+    const navigate = useNavigate();
+    const [userName, setUserName] = useState("");
 
     const playersOptions = [5, 6, 7, 8, 9, 10];
     const votingOptions =  [15, 30, 45, 60];
@@ -21,7 +24,13 @@ const CreateNewRoom = () => {
         votingTimer: 15,
         discussionTimer: 30,
         creator: "",
-        players: [""]
+        players: [{
+            userid: "",
+            username: "",
+            action: "",
+            faction: "",
+        }],
+        started: false,
     });
 
     const handleGameChange = (input: string, value: number) => {
@@ -45,12 +54,25 @@ const CreateNewRoom = () => {
         })
     }
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        createGameRoom(gameRoom);
+        const id = await createGameRoom(gameRoom, userName);
+        if (id === "none" || !id) {
+            console.log("not id")
+            alert("There was a problem creating your room, please try again later");
+            return null;
+        }
+        const response = await joinGameRoom(id, [], userName, gameRoom.requiredPlayers);
+        console.log(response);
+        if (!response) {
+            console.log("not response")
+            alert("There was a problem joining the room, please try again later");
+        } else {
+            navigate(`/room/${id}`);
+        }
+        console.log(id);
         setDialogVisible(false);
         setIsComponentVisible(false);
-        //TODO: ERROR HANDLING
     }
 
   return (
@@ -71,8 +93,8 @@ const CreateNewRoom = () => {
                         <XIcon width={12} height={12} />
                     </button>
                 </div>
-                <p>Name:</p>
-                <input className="form_style" onChange={(e) => {handleInputChange(e.target.value)}}/>
+                <p>Room name:</p>
+                <input className="form_style" onChange={(e) => {handleInputChange(e.target.value)}} value={gameRoom.name}/>
                 <p>Players:</p>
                 <ul className="flex-row" style={{"justifyContent": "start", "gap": "1rem", "flexWrap": "wrap"}}>
                     {playersOptions.map((item) => {
@@ -109,7 +131,9 @@ const CreateNewRoom = () => {
                         )
                     })}
                 </ul>
-                <button className="btn btn-label" disabled = {gameRoom.name.length === 0}>Create room</button>
+                <p>Your username:</p>
+                <input className="form_style" onChange={(e)=> {setUserName(e.target.value)}} value={userName}/>
+                <button className="btn btn-label" disabled = {gameRoom.name.length === 0 || userName.length === 0}>Create room</button>
             </form>
           </div>
         :
