@@ -1,72 +1,47 @@
 import { FormEvent, useState } from "react";
 import useComponentVisible from "../hooks/useComponentVisible";
 import { XIcon } from "lucide-react";
-import { createGameRoom, joinGameRoom } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";
+import { GameLogic } from "../utils/GameManager";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, createGameRoom } from "../firebase/firebase";
 
 const CreateNewRoom = () => {
     
+    var userId = "";
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+          userId = user.uid;
+        } 
+      });
+
     //TODO: Pass a prop to disable the create a room button when the user joins a room or creates one!
     const [dialogVisible, setDialogVisible] = useState(false);
     const { ref, isComponentVisible, setIsComponentVisible } =
     useComponentVisible(false);
+
     const navigate = useNavigate();
     const [userName, setUserName] = useState("");
-
-    const playersOptions = [2, 3, 4, 8, 9, 10];
-    const votingOptions =  [15, 30, 45, 60];
-    const discussionOptions =  [30, 60, 90, 120, 150];
-
-    const [gameRoom, setGameRoom] = useState({
-        id: "",
-        name: "",
-        requiredPlayers: 5,
-        votingTimer: 15,
-        discussionTimer: 30,
-        creator: "",
-        players: [{
-            userid: "",
-            username: "",
-            action: "",
-            faction: "",
-        }],
-        started: false,
-    });
-
-    const handleGameChange = (input: string, value: number) => {
-        setGameRoom(prevGameRoom => {
-            switch (input) {
-                case "players":
-                    return { ...prevGameRoom, requiredPlayers: value };
-                case "voting":
-                    return { ...prevGameRoom, votingTimer: value };
-                case "discussion":
-                    return { ...prevGameRoom, discussionTimer: value };
-                default:
-                    return prevGameRoom;
-            }
-        });
-    };
-
-    const handleInputChange = (value: string) => {
-        setGameRoom(prevGameRoom => {
-            return {...prevGameRoom, name: value};
-        })
-    }
+    const [roomName, setRoomName] = useState("");
+    const [requiredPlayers, setRequiredPlayers] = useState(2);
+    const playersOptions = [2, 3, 4];
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        const id = await createGameRoom(gameRoom, userName);
+        const game = new GameLogic();
+        if (!userId) {
+            console.log("error");
+            return null;
+
+        }
+        const gameRoom = game.createGameRoom(roomName, requiredPlayers,userName, userId);
+        console.log(gameRoom);
+        const id = await createGameRoom(gameRoom);
         if (id === "none" || !id) {
             console.log("not id")
             alert("There was a problem creating your room, please try again later");
             return null;
-        }
-        const response = await joinGameRoom(id, [], userName, gameRoom.requiredPlayers);
-        console.log(response);
-        if (!response) {
-            console.log("not response")
-            alert("There was a problem joining the room, please try again later");
         } else {
             navigate(`/room/${id}`);
         }
@@ -94,37 +69,13 @@ const CreateNewRoom = () => {
                     </button>
                 </div>
                 <p>Room name:</p>
-                <input className="form_style" onChange={(e) => {handleInputChange(e.target.value)}} value={gameRoom.name}/>
+                <input className="form_style" onChange={(e) => {setRoomName(e.target.value)}} value={roomName}/>
                 <p>Players:</p>
                 <ul className="flex-row" style={{"justifyContent": "start", "gap": "1rem", "flexWrap": "wrap"}}>
                     {playersOptions.map((item) => {
                         return (
                             <li key={item}>
-                                <button type="button" className="btn btn-icon" onClick={() => {handleGameChange("players", item)}} style={{backgroundColor: gameRoom.requiredPlayers == item ? "#c4a1ff" : "#FFFFFF"}}>
-                                    {item}
-                                </button>
-                            </li>
-                        )
-                    })}
-                </ul>
-                <p>Voting Timer: (seconds)</p>
-                <ul className="flex-row" style={{"justifyContent": "start", "gap": "1rem", "flexWrap": "wrap"}}>
-                    {votingOptions.map((item) => {
-                        return (
-                            <li key={item}>
-                                <button type="button" className="btn btn-icon" onClick={() => {handleGameChange("voting", item)}} style={{backgroundColor: gameRoom.votingTimer == item ? "#c4a1ff" : "#FFFFFF"}}>
-                                    {item}
-                                </button>
-                            </li>
-                        )
-                    })}
-                </ul>
-                <p>Discussion Timer: (seconds)</p>
-                <ul className="flex-row" style={{"justifyContent": "start", "gap": "1rem", "flexWrap": "wrap"}}>
-                    {discussionOptions.map((item) => {
-                        return (
-                            <li key={item}>
-                                <button type="button" className="btn btn-icon" onClick={() => {handleGameChange("discussion", item)}} style={{backgroundColor: gameRoom.discussionTimer === item ? "#c4a1ff" : "#FFFFFF"}}>
+                                <button type="button" className="btn btn-icon" onClick={() => {setRequiredPlayers(item)}} style={{backgroundColor: requiredPlayers == item ? "#c4a1ff" : "#FFFFFF"}}>
                                     {item}
                                 </button>
                             </li>
@@ -133,7 +84,7 @@ const CreateNewRoom = () => {
                 </ul>
                 <p>Your username:</p>
                 <input className="form_style" onChange={(e)=> {setUserName(e.target.value)}} value={userName}/>
-                <button className="btn btn-label" disabled = {gameRoom.name.length === 0 || userName.length === 0}>Create room</button>
+                <button className="btn btn-label" disabled = {roomName.length === 0 || userName.length === 0}>Create room</button>
             </form>
           </div>
         :

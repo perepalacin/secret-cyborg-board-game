@@ -10,12 +10,14 @@ import {
   useParams,
 } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
+import { GameLogic } from "../utils/GameManager";
 
 const Room = () => {
 
     const navigate = useNavigate();
+    const GameManager = new GameLogic();
+    //WE check the auth state
     var userId = "";
-
     onAuthStateChanged(auth, (user) => {
         if (!user) {
             navigate("/");
@@ -24,28 +26,32 @@ const Room = () => {
         }
       });
 
+  //We get the room id if it doesnt exist, return to home;
   const { roomId } = useParams();
   if (!roomId) {
     navigate("/find-a-room");
     return null;
   }
+
   //TODO: Check every 60 seconds if the user is still there, if not, kick him out!
   const [roomData, setRoomData] = useState<GameRoomProps>({
     id: "",
     name: "",
-    votingTimer: 15,
     requiredPlayers: 15,
-    discussionTimer: 15,
     players: [{
         userid: "string",
         username: "string",
-        action: "string",
-        faction: "string",
+        hand: [],
     }],
     creator: "",
     started: false,
+    discarded: [],
+    level: 1,
+    joinedPlayers: 1,
   });
+  const [playerHand, setPlayerHand] = useState<number[]>([]);
 
+  
   useEffect(() => {
     const docRef = doc(db, "gamerooms", roomId);
     const unsubscribe = onSnapshot(docRef, (doc) => {
@@ -59,7 +65,11 @@ const Room = () => {
         usernames: doc.data()?.usernames,
         creator: doc.data()?.creator,
         started: doc.data()?.started,
+        discarded: doc.data()?.discarded,
+        level: doc.data()?.level,
+        joinedPlayers: doc.data()?.joinedPlayers,
       };
+
       let playerIn = false;
       fetchedData.players.forEach((item: PlayerProps) =>{
         if (item.userid === userId) {
@@ -70,6 +80,11 @@ const Room = () => {
         navigate("/find-a-room");
       }
       setRoomData(fetchedData);
+      for (let i = 0; fetchedData.players.length; i++) {
+        if (fetchedData.players[i].userid === userId) {
+          setPlayerHand(fetchedData.players[i].hand);
+        }
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -99,46 +114,23 @@ const Room = () => {
     )
   }
 
+
+  const handlePlayCard = (card: number) => {
+    
+    const validMove = GameManager.playCard(roomData.players, card);
+    if (!validMove) {
+      alert("Lost");
+    }
+  }
+
   return (
     <section>
-      <h1>Game Board</h1>
-      <section className="flex-row">
-      <article className="flex-col">
-        <div className="flex-row">
-            <p>RepCard</p>
-            <p>RepCard</p>
-            <p>RepCard</p>
-            <p>RepCard</p>
-            <p>RepCard</p>
-        </div>
-        <div className="flex-row">
-            <p>FasCard</p>
-            <p>FasCard</p>
-            <p>FasCard</p>
-            <p>FasCard</p>
-            <p>FasCard</p>
-        </div>
-      </article>
-      <article>
-        <ul className="flex-col">
-          <li>
-            PLAYER1
-          </li>
-          <li>
-            PLAYER2
-          </li>
-          <li>
-            PLAYER3
-          </li>
-          <li>
-            PLAYER4
-          </li>
-          <li>
-            PLAYER5
-          </li>
-        </ul>
-      </article>
-      </section>
+      <h1>Board Game</h1>
+      {playerHand.map((item) => {
+        return (
+          <button className="btn" onClick={() => {handlePlayCard(item)}}>{item}</button>
+        )
+      })}
       {/* TOOD: Chat */}
     </section>
     ); 

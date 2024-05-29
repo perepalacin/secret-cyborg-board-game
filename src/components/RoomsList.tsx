@@ -1,15 +1,26 @@
 import { UserIcon, XIcon } from 'lucide-react';
 import { GameRoomProps, PlayerProps } from '../types';
-import { joinGameRoom } from '../firebase/firebase';
+import { auth, joinGameRoom } from '../firebase/firebase';
 import { useNavigate } from 'react-router-dom';
 import { FormEvent, useState } from 'react';
 import useComponentVisible from '../hooks/useComponentVisible';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface RoomsListProps {
     data: GameRoomProps[];
 }
 
 const RoomsList = ({data}: RoomsListProps) => {
+
+    var userId = "";
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            navigate("/");
+        } else {
+            userId = user.uid;
+        }
+      });
+
 
     const navigate = useNavigate();
     const [dialogVisible, setDialogVisible] = useState(false);
@@ -23,16 +34,33 @@ const RoomsList = ({data}: RoomsListProps) => {
         );
     };
     
-    const handleSubmit = async (event: FormEvent, id: string, players: PlayerProps[], requiredPlayers: number) => {
+    const handleSubmit = async (event: FormEvent, id: string, players: PlayerProps[], requiredPlayers: number, joinedPlayers: number) => {
         //Last player to join triggers the event that puts all players in the game!
         event.preventDefault();
+        let success = false;
         //TODO: Check if the username is already taken!
-        const response = await joinGameRoom(id, players, username, requiredPlayers);
-        if (!response) {
-            alert("There was a problem joining the room, please try again later");
-        } else {
-            navigate(`/room/${id}`);
+        const newPlayersArray = players;
+        for (let i = 0; i < players.length; i++) {
+            if (newPlayersArray[i].username === username) {
+                alert("Your username is already taken, please choose another one");
+                success = false;
+                break;
+            } else if (newPlayersArray[i].userid == "") {
+                newPlayersArray[i].username = username,
+                newPlayersArray[i].userid = userId;
+                success = true;
+                break;
+            }
+        };
+        if (success) {
+            const response = await joinGameRoom(players, joinedPlayers, requiredPlayers, id);
+            if (!response) {
+                alert("There was a problem joining the room, please try again later");
+            } else {
+                navigate(`/room/${id}`);
+            }
         }
+        return null;
     }
 
 
@@ -47,12 +75,10 @@ const RoomsList = ({data}: RoomsListProps) => {
                     </div>
                     <div className='flex-row'>
                         <div className='flex-col'>
-                            <p>Discussion: {item.discussionTimer} sec</p>
-                            <p>Voting: {item.votingTimer} sec</p>
                         </div>
                         <UserIcon />
                         <p>
-                            {item.players.length} / {item.requiredPlayers}
+                            {item.joinedPlayers} / {item.requiredPlayers}
                         </p>
                         <button className='btn' onClick={() => {setDialogVisible(true); setIsComponentVisible(true);}}>Join</button>
                     </div>
@@ -60,7 +86,7 @@ const RoomsList = ({data}: RoomsListProps) => {
                       <div style={{"position": "absolute", "top": "0", "left": "0", "width": "100%", "height": "100vh", "backgroundColor": "rgba(1, 1, 1, 0.2)", "display": "flex", "flexDirection": "column", "justifyContent": "center", "alignItems": "center"}} ref={ref}
                     //   onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}
                       >
-                        <form className = "flex-col" style={{"zIndex": "50", "width": "600px", "backgroundColor": "white", "alignItems": "start"}} onSubmit={(event) => {handleSubmit(event, item.id, item.players, item.requiredPlayers)}}>
+                        <form className = "flex-col" style={{"zIndex": "50", "width": "600px", "backgroundColor": "white", "alignItems": "start"}} onSubmit={(event) => {handleSubmit(event, item.id, item.players, item.requiredPlayers, item.joinedPlayers)}}>
                             <div className="flex-row" style={{"justifyContent": "space-between", "width": "100%"}}>
                                 <h4>Choose a username for this game:</h4>
                                 <button className="btn btn-icon" type="button" onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}>

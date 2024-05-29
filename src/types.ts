@@ -1,19 +1,19 @@
 export interface GameRoomProps {
     id: string;
     name: string;
-    votingTimer: number;
     requiredPlayers: number;
-    discussionTimer: number;
     players: PlayerProps[];
     creator: string;
     started: boolean;
+    discarded: number[];
+    level: number;
+    joinedPlayers: number;
 }
 
 export interface PlayerProps {
     userid: string,
     username: string,
-    action: string,
-    faction: string,
+    hand: number[];
 }
 
 export interface userData {

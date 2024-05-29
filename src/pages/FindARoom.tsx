@@ -15,6 +15,7 @@ const FindARoom = () => {
   const [filteredRooms, setFilteredRooms] = useState<GameRoomProps[]>([])
   const [searchQuery, setSearchQuery] = useState("");
 
+  
   var userId = "";
 
   onAuthStateChanged(auth, (user) => {
@@ -25,7 +26,7 @@ const FindARoom = () => {
 
   useEffect(() => {
     const q = query(collection(db, "gamerooms"),
-      orderBy("__name__", "asc"), where("started", "==", false));
+    orderBy("__name__", "asc"), where("started", "==", false));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedRooms: GameRoomProps[] = [];
       snapshot.forEach((doc) => {
@@ -37,12 +38,13 @@ const FindARoom = () => {
         fetchedRooms.push({
           id: doc.id,
           name: doc.data().name,
-          votingTimer: doc.data().votingTimer,
           requiredPlayers: doc.data().requiredPlayers,
-          discussionTimer: doc.data().discussionTimer,
           players: doc.data().players,
           creator: doc.data().creator,
           started: doc.data().started,
+          discarded: doc.data().discarded,
+          level: doc.data().level,
+          joinedPlayers: doc.data().joinedPlayers,
         });
         
       });
