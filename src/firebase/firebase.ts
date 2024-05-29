@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { addDoc, collection, doc, getFirestore, updateDoc } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, doc, getFirestore, updateDoc } from "firebase/firestore";
 import { browserSessionPersistence, getAuth, onAuthStateChanged, setPersistence, signInAnonymously } from 'firebase/auth';
 import { GameRoomProps, PlayerProps } from '../types';
+import { getRandomInt } from '../utils/randomness';
 
 
 const firebaseConfig = {
@@ -51,6 +52,7 @@ onAuthStateChanged(auth, (user) => {
         if (!userId) {
             throw new Error ("Unauthorized");   
         }
+        const faction = ""
         const docRef = await addDoc(collection(db, "gamerooms"), {
             name: data.name,
             votingTimer: data.votingTimer,
@@ -60,7 +62,7 @@ onAuthStateChanged(auth, (user) => {
                 userid: userId,
                 username: userName,
                 action: "none",
-                faction: "none",
+                faction: faction,
             }],
             creator: userId,
             started: false,
@@ -81,27 +83,25 @@ export const joinGameRoom = async (roomId: string, players: PlayerProps[], userN
             if (item.userid === userId) {
                 throw new Error("User already in the game");
             }
-        })
-        const updatedPlayers = players;
-        updatedPlayers.push({
-            userid: userId,
-            username: userName,
-            action: "none",
-            faction: "none", 
         });
-        const gamerooms = doc(db, "gamerooms", roomId);
-        console.log(updatedPlayers.length);
-        if (updatedPlayers.length > requiredPlayers) {
-            throw new Error("Room capacity already exceeded");
-        } else if (updatedPlayers.length === requiredPlayers) {
-            console.log("here");
+        const newPlayer = {
+                userid: userId,
+                username: userName,
+                action: "none",
+                faction: "none", 
+            }
+            const gamerooms = doc(db, "gamerooms", roomId);
+            if (players.length + 1 > requiredPlayers) {
+                throw new Error("Room capacity already exceeded");
+            } else if (players.length + 1 === requiredPlayers) {
+                console.log("here");
+                await updateDoc(gamerooms, {
+                    started: true,
+                });
+            }
             await updateDoc(gamerooms, {
-                started: true,
+                players: arrayUnion(newPlayer)
             });
-        }
-        await updateDoc(gamerooms, {
-            players: updatedPlayers,
-        });
         return true;
     } catch (error) {
         return false;

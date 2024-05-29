@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GameRoomProps } from "../types";
+import { GameRoomProps, PlayerProps } from "../types";
 import {
   doc,
   onSnapshot,
@@ -15,6 +15,7 @@ const Room = () => {
 
     const navigate = useNavigate();
     var userId = "";
+
     onAuthStateChanged(auth, (user) => {
         if (!user) {
             navigate("/");
@@ -59,20 +60,23 @@ const Room = () => {
         creator: doc.data()?.creator,
         started: doc.data()?.started,
       };
+      let playerIn = false;
+      fetchedData.players.forEach((item: PlayerProps) =>{
+        if (item.userid === userId) {
+          playerIn = true;
+        }
+      })
+      if (!playerIn) {
+        navigate("/find-a-room");
+      }
       setRoomData(fetchedData);
     });
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (roomData.started === true) {
-        //TODO: display a loading widget while this happends.
-        //Send everyone to a new room;
-        alert("The game shall begin!");
-    }
-  }, [roomData])
-  return (
-    <section>
+  if (!roomData.started) {
+    return (
+      <section>
         <h1>
             Welcome to {roomData.name} game room
         </h1>
@@ -91,7 +95,51 @@ const Room = () => {
                 )
             })}
         </ul>
+    </section>
+    )
+  }
 
+  return (
+    <section>
+      <h1>Game Board</h1>
+      <section className="flex-row">
+      <article className="flex-col">
+        <div className="flex-row">
+            <p>RepCard</p>
+            <p>RepCard</p>
+            <p>RepCard</p>
+            <p>RepCard</p>
+            <p>RepCard</p>
+        </div>
+        <div className="flex-row">
+            <p>FasCard</p>
+            <p>FasCard</p>
+            <p>FasCard</p>
+            <p>FasCard</p>
+            <p>FasCard</p>
+        </div>
+      </article>
+      <article>
+        <ul className="flex-col">
+          <li>
+            PLAYER1
+          </li>
+          <li>
+            PLAYER2
+          </li>
+          <li>
+            PLAYER3
+          </li>
+          <li>
+            PLAYER4
+          </li>
+          <li>
+            PLAYER5
+          </li>
+        </ul>
+      </article>
+      </section>
+      {/* TOOD: Chat */}
     </section>
     ); 
 };

@@ -68,7 +68,7 @@ const RoomsList = ({data}: RoomsListProps) => {
                                 </button>
                             </div>
                             <p>Name:</p>
-                            <input className="form_style" onChange={(e) => {setUserName(e.target.value)}}/>
+                            <input className="form_style" onChange={(e) => {setUserName(e.target.value)}} autoFocus={true}/>
                             <button className="btn btn-label" disabled = {username.length === 0}>Join</button>
                         </form>
                       </div>

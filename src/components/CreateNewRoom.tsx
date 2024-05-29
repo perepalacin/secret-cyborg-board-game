@@ -13,7 +13,7 @@ const CreateNewRoom = () => {
     const navigate = useNavigate();
     const [userName, setUserName] = useState("");
 
-    const playersOptions = [5, 6, 7, 8, 9, 10];
+    const playersOptions = [2, 3, 4, 8, 9, 10];
     const votingOptions =  [15, 30, 45, 60];
     const discussionOptions =  [30, 60, 90, 120, 150];
 

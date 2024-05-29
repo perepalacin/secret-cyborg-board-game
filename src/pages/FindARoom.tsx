@@ -1,16 +1,27 @@
 import { useEffect, useState } from "react";
 import CreateNewRoom from "../components/CreateNewRoom";
 import RoomsList from "../components/RoomsList";
-import { db } from "../firebase/firebase";
-import { GameRoomProps } from "../types";
+import { auth, db } from "../firebase/firebase";
+import { GameRoomProps, PlayerProps } from "../types";
 import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 const FindARoom = () => {
 
+  const navigate = useNavigate();
 
   const [rooms, setRooms] = useState<GameRoomProps[]>([]);
   const [filteredRooms, setFilteredRooms] = useState<GameRoomProps[]>([])
   const [searchQuery, setSearchQuery] = useState("");
+
+  var userId = "";
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      userId = user.uid;
+    }
+  });
 
   useEffect(() => {
     const q = query(collection(db, "gamerooms"),
@@ -18,6 +29,11 @@ const FindARoom = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedRooms: GameRoomProps[] = [];
       snapshot.forEach((doc) => {
+        doc.data().players.forEach((item: PlayerProps) => {
+          if (item.userid === userId) {
+            navigate(`/room/${doc.id}`);
+          }
+        })
         fetchedRooms.push({
           id: doc.id,
           name: doc.data().name,
@@ -28,6 +44,7 @@ const FindARoom = () => {
           creator: doc.data().creator,
           started: doc.data().started,
         });
+        
       });
       setRooms(fetchedRooms);
     });
