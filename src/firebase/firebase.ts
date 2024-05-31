@@ -1,7 +1,9 @@
 import { initializeApp } from "firebase/app";
 import {
   addDoc,
+  arrayUnion,
   collection,
+  deleteDoc,
   doc,
   getFirestore,
   increment,
@@ -14,7 +16,7 @@ import {
   setPersistence,
   signInAnonymously,
 } from "firebase/auth";
-import { GameRoomProps, PlayerProps } from "../types";
+import { GameRoomProps, PlayerProps, gameEvents } from "../types";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -30,7 +32,6 @@ const app = initializeApp(firebaseConfig); //firebase app => auth
 export const db = getFirestore(app); //Firestore
 
 export const auth = getAuth(app);
-
 
 setPersistence(auth, browserSessionPersistence)
   .then(() => {
@@ -70,6 +71,8 @@ export const createGameRoom = async (data: GameRoomProps) => {
       started: false,
       discarded: [],
       level: 1,
+      lives: 3,
+      throwingStars: 0,
       joinedPlayers: 1,
     });
     return docRef.id;
@@ -79,7 +82,11 @@ export const createGameRoom = async (data: GameRoomProps) => {
   }
 };
 
-export const joinGameRoom = async (players: PlayerProps[], joinedPlayers: number, requiredPlayers: number, roomId: string
+export const joinGameRoom = async (
+  players: PlayerProps[],
+  joinedPlayers: number,
+  requiredPlayers: number,
+  roomId: string
 ) => {
   try {
     if (!userId) {
@@ -89,17 +96,148 @@ export const joinGameRoom = async (players: PlayerProps[], joinedPlayers: number
     if (joinedPlayers + 1 > requiredPlayers) {
       throw new Error("Room capacity already exceeded");
     } else if (joinedPlayers + 1 === requiredPlayers) {
-      console.log("here");
       await updateDoc(gamerooms, {
-          started: true,
-        });
+        started: true,
+      });
     }
     await updateDoc(gamerooms, {
-        joinedPlayers: increment(1),
-        players: players
+      joinedPlayers: increment(1),
+      players: players,
     });
     return true;
   } catch (error) {
     return false;
   }
 };
+
+export const playValidCard = async (card: number, roomId: string, discarded: number[],  requiredCards: number) => {
+  try {
+    if (!userId) {
+      throw new Error("Unauthorized User");
+    }
+    const gamerooms = doc(db, "gamerooms", roomId);
+
+    if (discarded.length ===  requiredCards -1 ){
+      await updateDoc(gamerooms, {
+        discarded: arrayUnion(card),
+        lastMove: card,
+        nextAction: gameEvents.nextRound,
+      });
+    } else {
+      await updateDoc(gamerooms, {
+        discarded: arrayUnion(card),
+        lastMove: card,
+        nextAction: gameEvents.none,
+      });
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const playInvalidCard = async (card: number, roomId: string, livesLeft: number, players: PlayerProps[], discarded: number[], requiredCards: number) => {
+  try {
+    if (!userId) {
+      throw new Error("Unauthorized User");
+    }
+    const gamerooms = doc(db, "gamerooms", roomId);
+    const playedCards = discarded;
+    if (livesLeft <= 0) {
+      await updateDoc(gamerooms, {
+        lastMove: card,
+        nextAction: gameEvents.lost,
+        lives: 0,
+      });
+    } else {
+      await updateDoc(gamerooms, {
+        lastMove: card,
+        nextAction: gameEvents.lostLive
+      });
+      players.forEach((item) => {
+        console.log(item)
+        for (let i = 0; i < item.hand.length; i++) {
+          if (item.hand[i] < card && !discarded.includes(item.hand[i])) {
+            console.log("true: " + item.hand[i]);
+            playedCards.push(item.hand[i]);
+          }
+        }
+      });
+      playedCards.push(card);
+      console.log(playedCards);
+      if (playedCards.length === requiredCards) {
+        await updateDoc(gamerooms, {
+          nextAction: gameEvents.nextRound,
+          discarded: playedCards,
+          lives: livesLeft,
+          lastMove: card,
+        });
+      } else {
+        await updateDoc(gamerooms, {
+          discarded: playedCards,
+          lives: livesLeft,
+          lastMove: card,
+        });
+      }
+    }
+      return null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const increaseLevel = async (players: PlayerProps[], reward: string, roomId: string) => {
+  try {
+    if (!userId) {
+      throw new Error("Unauthorized User");
+    }
+    const gamerooms = doc(db, "gamerooms", roomId);
+    switch (reward) {
+      case "none":
+        await updateDoc(gamerooms, {
+          discarded: [],
+          players: players,
+          level: increment(1),
+          lastMove: 0,
+          nextAction: gameEvents.none
+        });
+        break;
+      case "live":
+        await updateDoc(gamerooms, {
+          discarded: [],
+          players: players,
+          level: increment(1),
+          lives: increment(1),
+          lastMove: 0,
+          nextAction: gameEvents.none
+        });
+        break;
+      case "throwingStar":
+        await updateDoc(gamerooms, {
+          discarded: [],
+          players: players,
+          level: increment(1),
+          throwingStars: increment(1),
+          lastMove: 0,
+          nextAction: gameEvents.none
+        });
+        break;        
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const deleteGameRoom = async (roomId: string) => {
+  try {
+    if (!userId) {
+      throw new Error("Unauthorized User");
+    }
+    await deleteDoc(doc(db, "gamerooms", roomId));
+    //TODO: Delete chat;
+  } catch (error) {
+  
+  }
+  }
+
