@@ -1,12 +1,12 @@
 :root {
-  /* TODO: Add popins font */
-  font-family: Poppins, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Work Sans Variable', sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  width: 100%;
 
   color-scheme: light dark;
   color: black;
-  background-color: rgb(166 250 255);
+  background-color: #FCEEE3;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -38,7 +38,7 @@ form label {
   margin: 5px 0;
 }
 
-h1, h2 {
+h1, h2, h3,h4, h5, p {
   margin: 0;
   padding: 0;
 }
@@ -54,7 +54,100 @@ li {
   margin: 0;
 }
 
-.form_style{
+.font-bold {
+  font-weight: 600;
+}
+
+.font-xl {
+  font-size: 1.25rem;
+}
+
+.landing-dialog {
+  padding: 4rem 2rem;
+  border: solid 2px black;
+  gap: 2rem;
+  border-radius: 1rem;
+  background-color: #F9F5F2;
+  box-shadow: 3px 4px 0px 1px #000;
+  z-index: 50;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.landing-dialog::-webkit-scrollbar {
+  display: none;
+}
+
+.falling-number {
+  margin: 0;
+  position: absolute;
+  top: 0;
+  z-index: -10;
+  font-size: 5rem;
+  text-shadow: 3px 4px #000, 0px 1px #000, 0 2px #000, 0 -2px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
+  font-weight: 900;
+}
+
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-100%);
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(70vh);
+    opacity: 0;
+  }
+}
+
+.landing-dialog h1 {
+  font-weight: 800;
+  font-size: 2rem;
+}
+
+.landing-dialog form {
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.yellow-bg {
+  background-color: #F7CB46;
+}
+
+.green-bg {
+  background-color: #07AF57;
+}
+
+.blue-bg {
+  background-color: #91A8EE;
+}
+
+.purple-bg {
+  background-color: #c4a1ff;
+}
+
+.dark-pink-bg {
+  background-color: #FF91E8;
+}
+
+.btn:disabled {
+  background-color: white;
+}
+
+.no-rooms-text {
+  padding: 2rem 0rem;
+  text-wrap: wrap;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #FF91E8;
+  text-shadow: 4px 4px #000, 1px 1px #000, 0 2px #000, 0 -2px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
+  letter-spacing: 1;
+}
+
+/* Input */
+input{
   font-size: 1rem;
   outline: none;
   border: 2px solid #000;
@@ -70,8 +163,55 @@ li {
   color: #64758F;
 }
 
-.form_style:focus {
+input:focus {
   background-color: rgb(255 166 246);
+}
+
+.form-backplate {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(1, 1, 1, 0.4);
+  display: flex;
+  flex-direction: column; 
+  justify-content: center; 
+  align-items: center;
+}
+
+.create-room-form {
+  z-index: 50;
+  width: 600px;
+  background-color: white;
+  padding: 2rem 2rem;
+  box-shadow: 3px 4px 0px 1px #000;
+  border: 2px solid black;
+  border-radius: 1rem;  
+  position: relative;
+}
+
+.create-room-form h4 {
+  font-size: 2rem;
+  text-align: left;
+}
+
+.create-room-form h5 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.space-between {
+  justify-content: space-between;
+}
+
+.close-dialog-btn {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  background-color: white;
+  height: 1.75rem;
+  width: 1.75rem;
 }
 
 .btn:focus{
@@ -86,17 +226,27 @@ li {
   outline: none;
   border: 2px solid #000;
   box-shadow: 3px 4px 0px 1px #000;
-  background-color: white;
   color: black;
   border-radius: 4px;
 }
 
-.btn-label {
+.accent-btn {
+  cursor: pointer;
+  font-size: 1rem;
+  outline: none;
+  border: 2px solid #000;
+  box-shadow: 3px 4px 0px 1px #000;
+  color: black;
+  font-weight: 800;
+  border-radius: 4rem;
+}
+
+.label {
   padding: 0.75rem 2rem;
   text-wrap: nowrap;
 }
 
-.btn-icon {
+.icon {
   padding: 0.75rem 1.25rem;
 }
 

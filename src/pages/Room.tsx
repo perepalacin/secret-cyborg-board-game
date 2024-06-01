@@ -7,6 +7,9 @@ import {
   deleteGameRoom,
   playInvalidCard,
   playValidCard,
+  processVotingResults,
+  requestThrowingStar,
+  voteThrowingStar,
 } from "../firebase/firebase";
 import { useNavigate, useParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
@@ -57,11 +60,19 @@ const Room = () => {
     throwingStars: 1,
     lastMove: 0,
     nextAction: gameEvents.none,
+    throwingStarRequest: [{
+        userid: "string",
+        answer: false,
+      }]
   });
+  //State that helps render the ui when a life is lost
   const [lostLife, setLostLife] = useState(false);
 
   //State that contains the hands of the player
   const [playerHand, setPlayerHand] = useState<number[]>([]);
+
+  //State that helps render the voting ui when a throwin star is requested;
+  const [votingCompleted, setVotingCompleted] = useState(false);
 
   useEffect(() => {
     //SUBSCRIBE TO FIREBASE REALTIME DOC OF THE ROOM
@@ -84,8 +95,10 @@ const Room = () => {
         joinedPlayers: doc.data()?.joinedPlayers,
         lastMove: doc.data()?.lastMove,
         nextAction: doc.data()?.nextAction,
+        throwingStarRequest: doc.data()?.throwingStarRequest,
       };
 
+      //TODO: Handle if document doesnt exist
       if (fetchedData.nextAction === gameEvents.lostLive) {
         setLostLife(true);
       } else if (fetchedData.nextAction === gameEvents.nextRound || fetchedData.nextAction === gameEvents.lost) {
@@ -111,25 +124,29 @@ const Room = () => {
           setPlayerHand(fetchedData.players[i].hand);
         }
       }
+
     });
     return () => unsubscribe();
   }, []);
 
   if (!roomData.started) {
     return (
-      <section>
+      <main className="landing-dialog" style={{ padding: "1rem 2rem" }}>
+      <div className="flex-col" style={{ width: "100%" }}>
         <h1>Welcome to {roomData.name} game room</h1>
         <h2>We are currently waiting for all players to join...</h2>
-        <h3>
+        <h3 style={{paddingTop: '2rem'}}>List of players:</h3>
+        <ul>
+          {roomData.players.map((item) => {
+            return <li className = "font-bold font-xl"key={item.username}>{item.username}</li>;
+          })}
+        </ul>
+        <h3 style={{paddingTop: '1rem'}}>
           {roomData.requiredPlayers - roomData.joinedPlayers} /{" "}
           {roomData.requiredPlayers} players remaining...
         </h3>
-        <ul>
-          {roomData.players.map((item) => {
-            return <li key={item.username}>{item.username}</li>;
-          })}
-        </ul>
-      </section>
+        </div>
+      </main>
     );
   }
 
@@ -155,7 +172,7 @@ const Room = () => {
         card,
         roomId,
         roomData.discarded,
-        roomData.players.length * roomData.level
+        roomData.players.length * roomData.players[0].hand.length
       );
     }
   };
@@ -175,8 +192,28 @@ const Room = () => {
   };
 
   const handlePlayThrowingStar = async () => {
-    alert("play a throwing star");
+    await requestThrowingStar(roomId);
   }
+
+  const handleThrowingStarRequest = async (answer: boolean) => {
+    await voteThrowingStar(roomId, answer);
+  }
+
+  const finishThrowingStarRequest = async () => {
+    console.log("here");
+    if (roomData.throwingStarRequest.length === roomData.requiredPlayers) {
+      console.log("voting completed");
+      let answer = true;
+      for (let i = 0; i < roomData.throwingStarRequest.length; i++) {
+        if (!roomData.throwingStarRequest[i].answer) {
+          answer= false;
+        }
+      }
+      console.log(answer);
+        await processVotingResults(roomId, answer, roomData.players, roomData.throwingStarRequest[0].userid, roomData.discarded);
+    }
+  }
+  finishThrowingStarRequest();
 
   const handleGameOver = async () => {
     if (playerHand.includes(roomData.lastMove)) {
@@ -186,8 +223,20 @@ const Room = () => {
   };
 
   return (
-    <section>
-      <h1>Board Game</h1>
+    <main>
+      <section className="flex-row" style={{width: '100%', justifyContent: "space-between", alignItems: "start"}}>
+        <h2>Level {roomData.level}</h2>
+        <h1>{roomData.name}'s Game Room</h1>
+        <div className="flex-col" style={{alignItems: "end"}}>
+          <p>Lives: {roomData.lives}</p>
+          <p>Shooting Stars: {roomData.throwingStars}</p>
+          {roomData.throwingStars ? 
+          <button className="btn label" onClick={handlePlayThrowingStar}>
+            Play Shooting star
+          </button>
+          : <></>}
+        </div>
+      </section>
       {/* MAIN GAME GRAPHICS */}
       {roomData.discarded.map((item) => {
         return (
@@ -197,26 +246,67 @@ const Room = () => {
         );
       })}
       <h2>Your hand</h2>
+      <div style={{position: 'absolute', bottom: 0, left: '50%', justifyContent:'center'}} className="flex-row">
       {playerHand.map((item) => {
         return (
           <button
-            key={item}
-            className="btn"
-            onClick={() => {
-              handlePlayCard(item);
-            }}
+          key={item}
+          className="btn"
+          onClick={() => {
+            handlePlayCard(item);
+          }}
           >
             {item}
           </button>
         );
       })}
-      <p>Lives: {roomData.lives}</p>
-      {roomData.throwingStars ? 
-      <button className="btn" onClick={handlePlayThrowingStar}>
-        Play Shooting star
-      </button>
-      : <></>}
-      <p>Shooting Stars: {roomData.throwingStars}</p>
+      </div>
+      {/* THROWING STAR REQUESTED! */}
+      {roomData.nextAction === gameEvents.throwingStarRequest ? (
+        <div>
+          <h3>{roomData.throwingStarRequest[0].userid} has requested to play a throwing star</h3>
+          <p>{roomData.throwingStarRequest.length} / {roomData.requiredPlayers} players voted already</p>
+          <p>Votes:</p>
+          <div className="flex-row">
+            <div>
+          <p>Yes</p>
+            <ul>
+              {roomData.throwingStarRequest.map((item) => {
+                if (item.answer) {
+                  return (
+                    <li>
+                      {item.userid}
+                    </li>
+                  )
+                }
+              })}
+            </ul>
+              </div>
+              <div>
+          <p>No</p>
+            <ul>
+              {roomData.throwingStarRequest.map((item) => {
+                if (!item.answer) {
+                  return (
+                    <li>
+                      {item.userid}
+                    </li>
+                  )
+                }
+              })}
+            </ul>
+              </div>
+          </div>
+            <button className="btn" onClick={() => handleThrowingStarRequest(true)}>
+              Accept
+            </button>
+            <button className="btn" onClick={() => handleThrowingStarRequest(false)}>
+              Deny
+            </button>
+        </div>
+      ) : (
+        <></>
+      )}
       {/* NEXT ROUND GRAPHICS */}
       {roomData.nextAction === gameEvents.nextRound ? (
         <div>
@@ -262,9 +352,20 @@ const Room = () => {
       ) : (
         <></>
       )}
-
+      {/* GAME COMPLETED GRAPHICS */}
+      {roomData.nextAction === gameEvents.gameCompleted ? (
+        <div>
+          <h3>Congratulations!</h3>
+          <p>You have managed to complete the game succesfully!</p>
+          <button className="btn" onClick={() => {navigate("/find-a-room")}}>
+            Accept
+          </button>
+        </div>
+      ) : (
+        <></>
+      )}
       {/* TOOD: Chat */}
-    </section>
+    </main>
   );
 };
 

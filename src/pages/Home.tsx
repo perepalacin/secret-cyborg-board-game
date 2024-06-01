@@ -1,5 +1,6 @@
 import { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { getRandomInt } from "../utils/GameManager";
 
 
 //Landing page
@@ -13,19 +14,40 @@ const Home = () => {
         navigate("/find-a-room");
     };
 
-
+    function createRaindrops() {
+        const colorList = ["C64C9F", "E34431", "FE5A35", "FC9E27"];
+        const rainContainer = document.querySelector('.landing-dialog');
+        const dropCount = 20;
+        for (let i = 0; i < dropCount; i++) {
+          const drop = document.createElement('p');
+          drop.className = 'falling-number';
+          drop.innerHTML = String(getRandomInt(10));
+          let randomLeft = Math.random() * 100;
+          let randomColor = getRandomInt(colorList.length);
+          while (randomLeft > 96) {
+            randomLeft = Math.random()*100;
+          }
+          drop.style.color = `#${colorList[randomColor]}`
+          drop.style.left = `${randomLeft}%`;
+          drop.style.animation = `rain-fall ${Math.random()*6+3}s linear infinite`;
+          if (rainContainer) {
+              rainContainer.appendChild(drop);
+            }
+        }
+      }
+      
+    window.addEventListener('load', createRaindrops);
 
   return (
-    <div>
-        <h1>Welcome to Play Secret Fascist</h1>
+    <section className="flex-col landing-dialog">
+        <h1>Welcome to Play The Mind Game Online</h1>
         <h2>We are very excited to have you here!</h2>
-
-        <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center'}}>
-            <button type="submit" className="btn btn-label">
+        <form onSubmit={handleSubmit}>
+            <button type="submit" className="accent-btn label yellow-bg">
                 Find a game
             </button>
         </form>
-    </div>
+    </section>
   )
 };
 export default Home;

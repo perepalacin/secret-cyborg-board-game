@@ -30,7 +30,9 @@ const RoomsList = ({data}: RoomsListProps) => {
 
     if (data.length === 0) {
         return (
-            <p>No game rooms found</p>
+            <div style={{width: "50%"}}>
+                <h3 className='no-rooms-text'>Sorry... there are no open game rooms at the moment</h3>
+            </div>
         );
     };
     
@@ -65,13 +67,13 @@ const RoomsList = ({data}: RoomsListProps) => {
 
 
   return (
-    <ul className='games-list flex-col'>
+    <ul className='games-list flex-col' style={{margin: '2rem 0rem'}}>
         {data.map((item) => {
             return (
-                <li key={item.id} className='flex-row' style={{justifyContent: 'space-between'}}>
-                    <div className='flex-col'>
-                    <p>{item.name}</p>
-                    <p>{item.id}</p>
+                <li key={item.id} className='flex-row' style={{justifyContent: 'space-between', backgroundColor: "#E5F6F0"}}>
+                    <div className='flex-col' style={{margin: '0rem 1rem', alignItems: 'start'}}>
+                    <p className='font-xl font-bold'>{item.name}'s Game Room</p>
+                    <p>Room Host: <span className='font-bold'>{item.players[0].username}</span></p>
                     </div>
                     <div className='flex-row'>
                         <div className='flex-col'>
@@ -80,22 +82,21 @@ const RoomsList = ({data}: RoomsListProps) => {
                         <p>
                             {item.joinedPlayers} / {item.requiredPlayers}
                         </p>
-                        <button className='btn' onClick={() => {setDialogVisible(true); setIsComponentVisible(true);}}>Join</button>
+                        <button className='btn icon dark-pink-bg' style={{padding: '0.25rem 0.5rem', margin: '0rem 1rem'}} onClick={() => {setDialogVisible(true); setIsComponentVisible(true);}}>Join</button>
                     </div>
                     {isComponentVisible && dialogVisible ? 
-                      <div style={{"position": "absolute", "top": "0", "left": "0", "width": "100%", "height": "100vh", "backgroundColor": "rgba(1, 1, 1, 0.2)", "display": "flex", "flexDirection": "column", "justifyContent": "center", "alignItems": "center"}} ref={ref}
-                    //   onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}
+                      <div className='form-backplate' ref={ref}
                       >
-                        <form className = "flex-col" style={{"zIndex": "50", "width": "600px", "backgroundColor": "white", "alignItems": "start"}} onSubmit={(event) => {handleSubmit(event, item.id, item.players, item.requiredPlayers, item.joinedPlayers)}}>
+                        <form className = "flex-col create-room-form" onSubmit={(event) => {handleSubmit(event, item.id, item.players, item.requiredPlayers, item.joinedPlayers)}}>
                             <div className="flex-row" style={{"justifyContent": "space-between", "width": "100%"}}>
                                 <h4>Choose a username for this game:</h4>
-                                <button className="btn btn-icon" type="button" onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}>
+                                <button className="btn btn-icon close-dialog-btn" type="button" onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}>
                                     <XIcon width={12} height={12} />
                                 </button>
                             </div>
-                            <p>Name:</p>
+                            <h5>Name:</h5>
                             <input className="form_style" onChange={(e) => {setUserName(e.target.value)}} autoFocus={true}/>
-                            <button className="btn btn-label" disabled = {username.length === 0}>Join</button>
+                            <button className="btn label purple-bg" disabled = {username.length === 0}>Join</button>
                         </form>
                       </div>
                     :

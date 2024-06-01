@@ -52,25 +52,23 @@ const CreateNewRoom = () => {
 
   return (
     <div>
-    <button className="btn btn-label"       
+    <button className="btn label purple-bg"       
         onClick={() => {
             setIsComponentVisible(true);
             setDialogVisible(true);
         }}>Create a room</button>
       {isComponentVisible && dialogVisible ? 
-          <div style={{"position": "absolute", "top": "0", "left": "0", "width": "100%", "height": "100vh", "backgroundColor": "rgba(1, 1, 1, 0.2)", "display": "flex", "flexDirection": "column", "justifyContent": "center", "alignItems": "center"}} ref={ref}
+          <div className="form-backplate" ref={ref}
         //   onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}
           >
-            <form className = "flex-col" style={{"zIndex": "50", "width": "600px", "backgroundColor": "white", "alignItems": "start"}} onSubmit={handleSubmit}>
-                <div className="flex-row" style={{"justifyContent": "space-between", "width": "100%"}}>
-                    <h4>Set up the rules for your game:</h4>
-                    <button className="btn btn-icon" type="button" onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}>
-                        <XIcon width={12} height={12} />
-                    </button>
-                </div>
-                <p>Room name:</p>
-                <input className="form_style" onChange={(e) => {setRoomName(e.target.value)}} value={roomName}/>
-                <p>Players:</p>
+            <form className = "flex-col create-room-form" onSubmit={handleSubmit}>
+                <h4>Set up the rules for your game:</h4>
+                <button className="btn btn-icon close-dialog-btn" type="button" onClick={() => {setDialogVisible(false); setIsComponentVisible(false)}}>
+                    <XIcon width={12} height={12} />
+                </button>
+                <h5>Room name:</h5>
+                <input autoFocus={true} placeholder="The best players" onChange={(e) => {setRoomName(e.target.value)}} value={roomName}/>
+                <h5>Players:</h5>
                 <ul className="flex-row" style={{"justifyContent": "start", "gap": "1rem", "flexWrap": "wrap"}}>
                     {playersOptions.map((item) => {
                         return (
@@ -82,9 +80,9 @@ const CreateNewRoom = () => {
                         )
                     })}
                 </ul>
-                <p>Your username:</p>
-                <input className="form_style" onChange={(e)=> {setUserName(e.target.value)}} value={userName}/>
-                <button className="btn btn-label" disabled = {roomName.length === 0 || userName.length === 0}>Create room</button>
+                <h5>Your username:</h5>
+                <input placeholder="Lucas" onChange={(e)=> {setUserName(e.target.value)}} value={userName}/>
+                <button className="btn label purple-bg" disabled = {roomName.length === 0 || userName.length === 0}>Create room</button>
             </form>
           </div>
         :

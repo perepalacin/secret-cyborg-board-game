@@ -22,6 +22,24 @@ export class GameLogic {
             this.deck.push(i);
         }
     }
+    
+    //Function that shuffles the cards and sends them to each user;
+    public shuffleCards (players: number, level: number) {
+        this.resetDeck();
+        const cards: number[] = [];
+        for (let i = 0; i < players; i++) {
+            for (let j = 0; j < level; j++) {
+                const card = getRandomInt(this.deck.length);
+                if (!cards.includes(card)) {
+                    cards.push(card);
+                } else {
+                    j--;
+                }
+                this.deck.filter((item) => item === card);
+            }
+        };
+        return cards;
+    }
 
     //Helper function to build the first game room
     public createGameRoom (name: string, requiredPlayers: number, username: string, userId: string) {
@@ -56,23 +74,6 @@ export class GameLogic {
         return newGameRoom;
     }
 
-    //Function that shuffles the cards and sends them to each user;
-    public shuffleCards (players: number, level: number) {
-        this.resetDeck();
-        const cards: number[] = [];
-        for (let i = 0; i < players; i++) {
-            for (let j = 0; j < level; j++) {
-                const card = getRandomInt(this.deck.length);
-                if (!cards.includes(card)) {
-                    cards.push(card);
-                } else {
-                    j--;
-                }
-                this.deck.filter((item) => item === card);
-            }
-        };
-        return cards;
-    }
 
     //Function to check if the last played card is valied
     public playCard(players: PlayerProps[], card: number, discarded: number[]) {
@@ -98,18 +99,21 @@ export class GameLogic {
                 item.hand.push(cards[cont]);
                 cont++;
             }
+            item.hand.sort();
         });
 
         //GET A RANDOM REWARD FOR OVERCOMING THE LEVEL
-        if (level >= 3) {
+        if (level > 3) {
             const prob = getRandomInt(2);
             if (prob === 0) {
-                await increaseLevel(newPlayersArray, "throwingStar", roomId)
+                await increaseLevel(newPlayersArray, "throwingStar", roomId, level);
             } else {
-                await increaseLevel(newPlayersArray, "live", roomId)
+                await increaseLevel(newPlayersArray, "live", roomId, level);
             }
+        } else if (level === 3) {
+            await increaseLevel(newPlayersArray, "throwingStar", roomId, level);    
         } else {
-            await increaseLevel(newPlayersArray, "none", roomId)
+            await increaseLevel(newPlayersArray, "none", roomId, level);
         }
 
         //WRITE THE CHANGES ONTO THE DB:
