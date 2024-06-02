@@ -30,8 +30,8 @@ const RoomsList = ({data}: RoomsListProps) => {
 
     if (data.length === 0) {
         return (
-            <div style={{width: "50%"}}>
-                <h3 className='no-rooms-text'>Sorry... there are no open game rooms at the moment</h3>
+            <div style={{width: "100%"}}>
+                <h3 style={{marginTop: '2rem', textAlign: 'center', width: '100%'}}>Sorry... there are no open game rooms at the moment</h3>
             </div>
         );
     };

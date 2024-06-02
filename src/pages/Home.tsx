@@ -1,6 +1,6 @@
 import { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { getRandomInt } from "../utils/GameManager";
+import { createRaindrops, rootDiv } from "../utils/animations";
 
 
 //Landing page
@@ -14,29 +14,9 @@ const Home = () => {
         navigate("/find-a-room");
     };
 
-    function createRaindrops() {
-        const colorList = ["C64C9F", "E34431", "FE5A35", "FC9E27"];
-        const rainContainer = document.querySelector('.landing-dialog');
-        const dropCount = 20;
-        for (let i = 0; i < dropCount; i++) {
-          const drop = document.createElement('p');
-          drop.className = 'falling-number';
-          drop.innerHTML = String(getRandomInt(10));
-          let randomLeft = Math.random() * 100;
-          let randomColor = getRandomInt(colorList.length);
-          while (randomLeft > 96) {
-            randomLeft = Math.random()*100;
-          }
-          drop.style.color = `#${colorList[randomColor]}`
-          drop.style.left = `${randomLeft}%`;
-          drop.style.animation = `rain-fall ${Math.random()*6+3}s linear infinite`;
-          if (rainContainer) {
-              rainContainer.appendChild(drop);
-            }
-        }
-      }
       
     window.addEventListener('load', createRaindrops);
+    window.addEventListener('load', rootDiv);
 
   return (
     <section className="flex-col landing-dialog">

@@ -73,7 +73,7 @@ const CreateNewRoom = () => {
                     {playersOptions.map((item) => {
                         return (
                             <li key={item}>
-                                <button type="button" className="btn btn-icon" onClick={() => {setRequiredPlayers(item)}} style={{backgroundColor: requiredPlayers == item ? "#c4a1ff" : "#FFFFFF"}}>
+                                <button type="button" className="btn icon" onClick={() => {setRequiredPlayers(item)}} style={{backgroundColor: requiredPlayers == item ? "#c4a1ff" : "#FFFFFF"}}>
                                     {item}
                                 </button>
                             </li>

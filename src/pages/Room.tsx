@@ -14,8 +14,12 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { GameLogic } from "../utils/GameManager";
+import { createRaindrops, rootDiv } from "../utils/animations";
+import { LoaderCircle } from "lucide-react";
 
 const Room = () => {
+
+  window.addEventListener('load', rootDiv);
   const navigate = useNavigate();
 
   //Class that helps building the deck and managing the game state
@@ -60,10 +64,12 @@ const Room = () => {
     throwingStars: 1,
     lastMove: 0,
     nextAction: gameEvents.none,
-    throwingStarRequest: [{
+    throwingStarRequest: [
+      {
         userid: "string",
         answer: false,
-      }]
+      },
+    ],
   });
   //State that helps render the ui when a life is lost
   const [lostLife, setLostLife] = useState(false);
@@ -71,8 +77,11 @@ const Room = () => {
   //State that contains the hands of the player
   const [playerHand, setPlayerHand] = useState<number[]>([]);
 
-  //State that helps render the voting ui when a throwin star is requested;
-  const [votingCompleted, setVotingCompleted] = useState(false);
+  //State that controls the last move made by the user to know if he has to take action
+  const [lastPlayerMove, setLastPlayerMove] = useState<number>(1000);
+
+  //State that controls wether or not the user has voted already or not.
+  const [voted, setVoted] = useState(false);
 
   useEffect(() => {
     //SUBSCRIBE TO FIREBASE REALTIME DOC OF THE ROOM
@@ -98,10 +107,18 @@ const Room = () => {
         throwingStarRequest: doc.data()?.throwingStarRequest,
       };
 
+      if (fetchedData.started) {
+        window.removeEventListener('load', createRaindrops);
+
+      }
+
       //TODO: Handle if document doesnt exist
       if (fetchedData.nextAction === gameEvents.lostLive) {
         setLostLife(true);
-      } else if (fetchedData.nextAction === gameEvents.nextRound || fetchedData.nextAction === gameEvents.lost) {
+      } else if (
+        fetchedData.nextAction === gameEvents.nextRound ||
+        fetchedData.nextAction === gameEvents.lost
+      ) {
         setLostLife(false);
       }
       //LOOK IF THE USER LOGGED IN IS INSIDE THE ROOM DOCUMENT, IF NOT, SEND HIM BACK TO THE LOBBY
@@ -121,10 +138,15 @@ const Room = () => {
       //UPDATE THE STATE THAT RENDERS THE HANDS OF THE USER
       for (let i = 0; fetchedData.players.length; i++) {
         if (fetchedData.players[i].userid === userId) {
-          setPlayerHand(fetchedData.players[i].hand);
+          const filteredHands: number[] =  [];
+          fetchedData.players[i].hand.forEach((card: number) => {
+            if (!fetchedData.discarded.includes(card)) {
+              filteredHands.push(card);
+            }
+          });
+          setPlayerHand(filteredHands);
         }
       }
-
     });
     return () => unsubscribe();
   }, []);
@@ -132,19 +154,23 @@ const Room = () => {
   if (!roomData.started) {
     return (
       <main className="landing-dialog" style={{ padding: "1rem 2rem" }}>
-      <div className="flex-col" style={{ width: "100%" }}>
-        <h1>Welcome to {roomData.name} game room</h1>
-        <h2>We are currently waiting for all players to join...</h2>
-        <h3 style={{paddingTop: '2rem'}}>List of players:</h3>
-        <ul>
-          {roomData.players.map((item) => {
-            return <li className = "font-bold font-xl"key={item.username}>{item.username}</li>;
-          })}
-        </ul>
-        <h3 style={{paddingTop: '1rem'}}>
-          {roomData.requiredPlayers - roomData.joinedPlayers} /{" "}
-          {roomData.requiredPlayers} players remaining...
-        </h3>
+        <div className="flex-col" style={{ width: "100%" }}>
+          <h1>Welcome to {roomData.name} game room</h1>
+          <h2>We are currently waiting for all players to join...</h2>
+          <h3 style={{ paddingTop: "2rem" }}>List of players:</h3>
+          <ul>
+            {roomData.players.map((item) => {
+              return (
+                <li className="font-bold font-xl" key={item.username}>
+                  {item.username}
+                </li>
+              );
+            })}
+          </ul>
+          <h3 style={{ paddingTop: "1rem" }}>
+            {roomData.requiredPlayers - roomData.joinedPlayers} /{" "}
+            {roomData.requiredPlayers} players remaining...
+          </h3>
         </div>
       </main>
     );
@@ -192,27 +218,36 @@ const Room = () => {
   };
 
   const handlePlayThrowingStar = async () => {
+    setVoted(true);
     await requestThrowingStar(roomId);
-  }
+  };
 
   const handleThrowingStarRequest = async (answer: boolean) => {
     await voteThrowingStar(roomId, answer);
-  }
+  };
 
   const finishThrowingStarRequest = async () => {
     console.log("here");
     if (roomData.throwingStarRequest.length === roomData.requiredPlayers) {
-      console.log("voting completed");
+      if (voted) {
+        setVoted(false);
+      }
       let answer = true;
       for (let i = 0; i < roomData.throwingStarRequest.length; i++) {
         if (!roomData.throwingStarRequest[i].answer) {
-          answer= false;
+          answer = false;
         }
       }
       console.log(answer);
-        await processVotingResults(roomId, answer, roomData.players, roomData.throwingStarRequest[0].userid, roomData.discarded);
+      await processVotingResults(
+        roomId,
+        answer,
+        roomData.players,
+        roomData.throwingStarRequest[0].userid,
+        roomData.discarded
+      );
     }
-  }
+  };
   finishThrowingStarRequest();
 
   const handleGameOver = async () => {
@@ -223,147 +258,179 @@ const Room = () => {
   };
 
   return (
-    <main>
-      <section className="flex-row" style={{width: '100%', justifyContent: "space-between", alignItems: "start"}}>
+    <main style={{width: '100%', padding: 0, margin: 0}}>
+      <section
+        className="flex-row"
+        style={{
+          justifyContent: "space-between",
+          alignItems: "start",
+          margin: '2rem 4rem'
+        }}
+      >
         <h2>Level {roomData.level}</h2>
         <h1>{roomData.name}'s Game Room</h1>
-        <div className="flex-col" style={{alignItems: "end"}}>
-          <p>Lives: {roomData.lives}</p>
-          <p>Shooting Stars: {roomData.throwingStars}</p>
-          {roomData.throwingStars ? 
-          <button className="btn label" onClick={handlePlayThrowingStar}>
-            Play Shooting star
-          </button>
-          : <></>}
+        <div className="flex-col" style={{ alignItems: "end" }}>
+          <p>Lives: <span className="font-bold">{roomData.lives}</span></p>
+          <p>Shooting Stars: <span className="font-bold">{roomData.throwingStars}</span></p>
+          {roomData.throwingStars ? (
+            <button className="btn label yellow-bg" onClick={handlePlayThrowingStar}>
+              Play Shooting star
+            </button>
+          ) : (
+            <></>
+          )}
         </div>
       </section>
       {/* MAIN GAME GRAPHICS */}
-      {roomData.discarded.map((item) => {
+      {/* DISCARD PILE */}
+      <ul className="flex-row discarded-pile">
+      {roomData.discarded.map((item, index) => {
         return (
-          <button className="btn" key={item}>
-            {item}
-          </button>
-        );
-      })}
-      <h2>Your hand</h2>
-      <div style={{position: 'absolute', bottom: 0, left: '50%', justifyContent:'center'}} className="flex-row">
-      {playerHand.map((item) => {
-        return (
-          <button
-          key={item}
-          className="btn"
-          onClick={() => {
-            handlePlayCard(item);
-          }}
+          <li className="discarded-card" key={item} 
+          style={{left: `${index*2 + 2}rem`}}
           >
-            {item}
-          </button>
+            <span className="info-card-number">{item}</span>
+            <p className="main-card-number">{item}</p>
+          </li>
         );
       })}
-      </div>
+      </ul>
+      {/* PLAYER HANDS */}
+      <section
+        className="flex-row player-hands"
+      >
+        {playerHand.map((item) => {
+          return (
+            <button
+              key={item}
+              className="card"
+              onClick={() => {
+                setLastPlayerMove(item);
+                handlePlayCard(item);
+              }}
+            >
+              <span className="info-card-number">{item}</span>
+              <p className="main-card-number">{item}</p>
+            </button>
+          );
+        })}
+      </section>
       {/* THROWING STAR REQUESTED! */}
       {roomData.nextAction === gameEvents.throwingStarRequest ? (
-        <div>
-          <h3>{roomData.throwingStarRequest[0].userid} has requested to play a throwing star</h3>
-          <p>{roomData.throwingStarRequest.length} / {roomData.requiredPlayers} players voted already</p>
-          <p>Votes:</p>
-          <div className="flex-row">
+                  <div className="form-backplate">
+                  <article className="flex-col create-room-form" style={{gap: '1rem'}}>
+
+          <h1>
+            A player has requested to play a
+            throwing star
+          </h1>
+          <p>
+            {roomData.throwingStarRequest.length} / {roomData.requiredPlayers}{" "}
+            players voted already
+          </p>
+          <p className="font-bold">Votes:</p>
+          <div className="flex-row" style={{gap: '2rem'}}>
             <div>
-          <p>Yes</p>
-            <ul>
-              {roomData.throwingStarRequest.map((item) => {
-                if (item.answer) {
-                  return (
-                    <li>
-                      {item.userid}
-                    </li>
-                  )
-                }
-              })}
-            </ul>
-              </div>
-              <div>
-          <p>No</p>
-            <ul>
-              {roomData.throwingStarRequest.map((item) => {
-                if (!item.answer) {
-                  return (
-                    <li>
-                      {item.userid}
-                    </li>
-                  )
-                }
-              })}
-            </ul>
-              </div>
+              <p>Yes: <span className="font-bold">{roomData.throwingStarRequest.filter((item) => item.answer === true).length}</span></p>
+            </div>
+            <div>
+              <p>No: <span className="font-bold">{roomData.throwingStarRequest.filter((item) => item.answer === false).length}</span></p>
+
+            </div>
           </div>
-            <button className="btn" onClick={() => handleThrowingStarRequest(true)}>
-              Accept
-            </button>
-            <button className="btn" onClick={() => handleThrowingStarRequest(false)}>
-              Deny
-            </button>
+          {voted ? <></> : 
+          <div className="flex-row" style={{gap: '2rem'}}>
+          <button
+            className="btn label green-bg"
+            onClick={() => {setVoted(true); handleThrowingStarRequest(true)}}
+            >
+            Accept
+          </button>
+          <button
+            className="btn label red-bg"
+            onClick={() => {setVoted(true); handleThrowingStarRequest(false)}}
+            >
+            Deny
+          </button>
+          </div>
+          }
+            </article>
         </div>
       ) : (
         <></>
       )}
       {/* NEXT ROUND GRAPHICS */}
       {roomData.nextAction === gameEvents.nextRound ? (
-        <div>
-          <h3>Well done!</h3>
-          {playerHand.includes(Number(roomData.lastMove)) ? (
-            <button className="btn" onClick={handleGetNextRound}>
-              Next Round
-            </button>
-          ) : (
-            <p>Wait for the next move</p>
-          )}
-          Congratulations! Level {roomData.level} passed!
-        </div>
+          <div className="form-backplate">
+            <article className="flex-col create-room-form" style={{gap: '1rem'}}>
+              <h1>Well done!</h1>
+              <p>Congratulations! Level {roomData.level} completed!</p>
+              {lastPlayerMove === Number(roomData.lastMove) ? (
+                <button className="accent-btn label yellow-bg" onClick={handleGetNextRound}>
+                  Next Round
+                </button>
+              ) : (
+                <p className="loading-text">Wait for the next move <LoaderCircle className="loading-icon" size={10}/></p>
+              )}
+            </article>
+          </div>
       ) : (
         <></>
       )}
       {/* LOST LIVE GRAPHICS */}
       {lostLife ? (
-        <div>
-          <h3>Ooops... Looks like someone skipped a card...</h3>
-            //Dialog with a graphic showing that a life was lost
-            <button
-              className="btn"
-              onClick={() => {
-                setLostLife(false);
-              }}
+        <div className="form-backplate">
+          <article className="flex-col create-room-form" style={{gap: '1rem'}}>
+          <h1>Ooops... Looks like someone skipped a card...</h1>
+          <p>You have lost one life. {roomData.lives} {roomData.lives >= 1 ? "lives" : "live"} remaining</p>
+          <button
+            className="accent-btn label yellow-bg"
+            onClick={() => {
+              setLostLife(false);
+            }}
             >
-              Accept
-            </button>
+            Accept
+          </button>
+            </article>
         </div>
       ) : (
         <></>
       )}
       {/* GAME OVER GRAPHICS */}
       {roomData.nextAction === gameEvents.lost ? (
-        <div>
-          <h3>Game over!</h3>
-          //Dialog with a graphic showing that a life was lost
-          <button className="btn" onClick={handleGameOver}>
+        <div className="form-backplate">
+        <article className="flex-col create-room-form" style={{gap: '2rem'}}>
+          <h1>Game over!</h1>
+          <p style={{textAlign: 'center'}}>Your team has run out of lives! Better luck next time!</p>
+          <button className="btn label yellow-bg" onClick={handleGameOver}>
             Accept
           </button>
+        </article>
         </div>
       ) : (
         <></>
       )}
       {/* GAME COMPLETED GRAPHICS */}
       {roomData.nextAction === gameEvents.gameCompleted ? (
-        <div>
-          <h3>Congratulations!</h3>
+                  <div className="form-backplate">
+                  <article className="flex-col create-room-form" style={{gap: '1rem'}}>
+      
+          <h1>Congratulations!</h1>
           <p>You have managed to complete the game succesfully!</p>
-          <button className="btn" onClick={() => {navigate("/find-a-room")}}>
+          <button
+            className="accent-btn label yellow-bg"
+            onClick={() => {
+              navigate("/find-a-room");
+            }}
+          >
             Accept
           </button>
-        </div>
+          </article>
+          </div>
       ) : (
         <></>
       )}
+
       {/* TOOD: Chat */}
     </main>
   );

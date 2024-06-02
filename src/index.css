@@ -2,7 +2,7 @@
   font-family: 'Work Sans Variable', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  width: 100%;
+  width: 100% !important;
 
   color-scheme: light dark;
   color: black;
@@ -12,6 +12,9 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  margin: 0;
+  padding: 0;
 }
 
 a {
@@ -65,11 +68,11 @@ li {
 .landing-dialog {
   padding: 4rem 2rem;
   border: solid 2px black;
+  width: 50%;
   gap: 2rem;
   border-radius: 1rem;
   background-color: #F9F5F2;
   box-shadow: 3px 4px 0px 1px #000;
-  z-index: 50;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
@@ -82,7 +85,7 @@ li {
   margin: 0;
   position: absolute;
   top: 0;
-  z-index: -10;
+  z-index: -50;
   font-size: 5rem;
   text-shadow: 3px 4px #000, 0px 1px #000, 0 2px #000, 0 -2px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
   font-weight: 900;
@@ -101,6 +104,9 @@ li {
     opacity: 0;
   }
 }
+
+
+/* HOME PAGE */
 
 .landing-dialog h1 {
   font-weight: 800;
@@ -136,6 +142,12 @@ li {
   background-color: white;
 }
 
+.red-bg {
+  background-color: #E34431;
+}
+
+/* FIND A ROOM PAGE */
+
 .no-rooms-text {
   padding: 2rem 0rem;
   text-wrap: wrap;
@@ -144,6 +156,7 @@ li {
   color: #FF91E8;
   text-shadow: 4px 4px #000, 1px 1px #000, 0 2px #000, 0 -2px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
   letter-spacing: 1;
+  text-align: center;
 }
 
 /* Input */
@@ -182,13 +195,16 @@ input:focus {
 
 .create-room-form {
   z-index: 50;
-  width: 600px;
   background-color: white;
   padding: 2rem 2rem;
   box-shadow: 3px 4px 0px 1px #000;
   border: 2px solid black;
   border-radius: 1rem;  
   position: relative;
+  width: 400px;
+  @media (min-width: 768px) {
+    width: 600px;
+}
 }
 
 .create-room-form h4 {
@@ -218,7 +234,6 @@ input:focus {
   transform: translateY(4px);
   box-shadow: 1px 2px 0px 0px #000;
 }
-
 
 .btn{
   cursor: pointer;
@@ -290,3 +305,108 @@ input:focus {
 .games-list li:last-child {
   border: none;
 }
+
+/* ROOM PAGE */
+
+.player-hands {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  bottom: 2rem;
+  justify-content: center;
+  flex-direction: row;
+
+  width: 100%;
+  gap: 0.5rem;
+
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  border: 2px solid #000;
+  box-shadow: 3px 4px 0px 1px #000;
+  color: black;
+  background-color: white;
+  border-radius: 4px;
+  width: 140px;
+  height: 180px;
+}
+
+.main-card-number {
+  font-size: 5rem;
+  font-weight: 800;
+  text-shadow: 3px 4px #000, 0px 1px #000, 0 2px #000, 0 -2px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
+  color: #E34431;
+}
+
+.info-card-number {
+  position: absolute;
+  font-size: 1rem;
+  font-weight: 600; 
+  top: 0.35rem; 
+  left: 0.35rem;
+}
+
+.card:hover {
+  background-color: #F9F5F2;
+}
+
+.discarded-pile {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.discarded-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  border: 2px solid #000;
+  box-shadow: 3px 4px 0px 1px #000;
+  color: black;
+  background-color: white;
+  border-radius: 4px;
+  width: 140px;
+  height: 180px;
+}
+
+.loading-text::after {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.loading-icon {
+  animation: rotation infinite 1.25s linear;
+}
+
+@keyframes rotation{
+  from{
+    transform:rotate(0deg);
+  }
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+/*
+@keyframes dotty {
+    0%   { content: '  '; }
+    25%  { content: '.  '; }
+    50%  { content: '.. '; }
+    75%  { content: '...'; }
+    100% { content: ''; }
+} */

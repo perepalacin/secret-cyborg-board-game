@@ -100,8 +100,8 @@ const FindARoom = () => {
   return (
     <main className="landing-dialog" style={{ padding: "1rem 2rem" }}>
       <div className="flex-col" style={{ width: "100%" }}>
-          <h1>Welcome to Play The Mind Game Online</h1>
-          <h2>Please join a game room or create your own!</h2>
+          <h1 style={{textAlign: 'center'}}>Welcome to Play The Mind Game Online</h1>
+          <h2 style={{textAlign: 'center'}}>Please join a game room or create your own!</h2>
         <div className="flex-row" style={{ width: "100%", gap: "0.5rem" }}>
           <input
             autoFocus={true}

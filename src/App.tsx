@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import './App.css'
 import Home from './pages/Home'
 import FindARoom from './pages/FindARoom'
 import Room from './pages/Room'
